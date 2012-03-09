@@ -18,9 +18,10 @@ no_index:
     - t
     - inc
 requires:
+  Class::Accessor: 0
   IO::Select: 0
   IO::Socket::INET: 0
   JSON: 0
   Log::Log4perl: 0
   Test::More: 0
-version: 0.02
+version: 0.03
