@@ -10,11 +10,11 @@ Net::MessageBus - Pure Perl simple message bus
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use base 'Net::MessageBus::Base';
 
@@ -185,6 +185,39 @@ sub subscribe {
     return $self->send_to_server('subscribe',{ @_ } );
 }
 
+
+=head2 subscribe_all
+
+Subscribes the current Net::MessageBus client to all the messages 
+the server receives
+
+B<Example> :
+
+    $MessageBus->subscribe_all;
+    
+=cut
+sub subscribe_all {
+    my $self = shift;
+    
+    return $self->send_to_server('subscribe',{ all => 1 } );
+}
+
+
+=head2 unsubscribe
+
+Unsubscribes current Net::MessageBus client from all the messages it 
+previously subscribed to
+
+B<Example> :
+
+    $MessageBus->unsubscribe();
+    
+=cut
+sub unsubscribe {
+    my $self = shift;
+    
+    return $self->send_to_server('subscribe',{ unsubscribe => 1 } );
+}
 
 =head2 send
 
