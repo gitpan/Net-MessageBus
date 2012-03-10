@@ -10,11 +10,11 @@ Net::MessageBus::Message - Pure Perl generic message queue
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use base qw(Class::Accessor);
 
@@ -42,9 +42,9 @@ Example :
 
 =head2 new
 
-    Creates a new Net::MessageBus::Message object
-    
-    B<Arguments>
+Creates a new Net::MessageBus::Message object
+
+B<Arguments>
 
 =over
 
@@ -58,7 +58,7 @@ Example :
 
 =back
 
-    B<Example> :
+B<Example> :
     
     my $foo = Net::MessageBus::Message->new(
                             type => 'event',
@@ -80,42 +80,42 @@ sub new {
 
 =head2 type
 
-    Returns the type of the message
+Returns the type of the message
+
+B<Example> :
     
-    B<Example> :
-    
-        my $type = $Message->type();
+    my $type = $Message->type();
         
 =head2 sender
 
-    Returns the sender of the message
-    
-    B<Example> :
-    
-        my $type = $Message->sender();
+Returns the sender of the message
+
+B<Example> :
+
+    my $type = $Message->sender();
         
 =head2 group
 
-    Returns the group of the message
-    
-    B<Example> :
-    
-        my $type = $Message->group();
+Returns the group of the message
+
+B<Example> :
+
+    my $type = $Message->group();
         
 =head2 payload
 
-    Returns the payload of the message 
-    
-    B<Example> :
-    
-        my $type = $Message->payload();        
+Returns the payload of the message 
+
+B<Example> :
+
+    my $type = $Message->payload();        
 
 
 =head1 Private methods
 
 =head2 serialize
 
-    Serializes the message for transport
+Serializes the message for transport
 
 =cut
 

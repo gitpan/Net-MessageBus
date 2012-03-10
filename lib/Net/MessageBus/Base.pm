@@ -10,17 +10,17 @@ Net::MessageBus::Base - Base class for Net::MessageBus modules
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SUBROUTINES/METHODS
 
 =head2 logger
 
-    Getter / Setter for the logging object
+Getter / Setter for the logging object
 
 =cut
 sub logger {
@@ -34,7 +34,7 @@ sub logger {
 
 =head2 create_default_logger
 
-    Creates the default logger that will be used
+Creates the default logger that will be used
     
 =cut
 sub create_default_logger {
