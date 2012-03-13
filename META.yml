@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Net-MessageBus
-version:            0.05
+version:            0.06
 abstract:           Pure Perl simple message bus
 author:
     - Horea Gligan <horea@gmail.com>
