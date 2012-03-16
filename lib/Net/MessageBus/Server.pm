@@ -10,17 +10,19 @@ Net::MessageBus::Server - Pure Perl message bus server
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use base qw(Net::MessageBus::Base);
 
 use JSON;
 use IO::Select;
 use IO::Socket::INET;
+
+use Net::MessageBus::Message;
 
 #handle gracefully the death of child ssh processes
 use POSIX ":sys_wait_h";

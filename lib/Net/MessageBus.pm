@@ -1,4 +1,4 @@
-package Net::MessageBus;
+	package Net::MessageBus;
 
 use 5.006;
 use strict;
@@ -10,11 +10,11 @@ Net::MessageBus - Pure Perl simple message bus
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 =cut
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use base 'Net::MessageBus::Base';
 
@@ -38,6 +38,8 @@ This module implements the client side of the Message Bus.
                         username => 'user',
                         password => 'password',
                         logger  => $logger_object,
+						block => 0,
+						timeout => 0.01
                     );
 
 On initialization the client authenticates with the Net::MessageBus::Server
@@ -122,6 +124,13 @@ B<Arguments>
 
 =item * logger = A object on which we can call the fallowing methods C<debug,info,warn,error>
 
+=item * block = Sets the read timout to 0 which means that the if we don't have any unread 
+messages from the server we will wait until the server sends something. If I<block> is true 
+I<timeout> will be ignored.
+
+=item * timeout = the maximum ammount of time we should wait for a message from the server
+before returning C<undef> for C<next_message()> or an empty list for C<pending_messages()>
+
 =back
 
 B<Example>
@@ -155,6 +164,8 @@ sub new {
                 sender         => $params{sender},
                 username       => $params{username},
                 password       => $params{password},
+				timeout		   => defined($params{timeout}) ? $params{timeout} : 0.01,
+				blocking	   => defined($params{blocking}) ? $params{blocking} : 1,
                 msgqueue       => [],
                 buffer         => '',
                 };
@@ -283,8 +294,11 @@ server. The message is a Net::MessageBus::Message object.
 =cut
 sub next_message {
     my $self = shift;
+    my %params = @_;
     
-    $self->read_server_messages();
+    if (! scalar(@{$self->{msgqueue}})) {
+        $self->read_server_messages();
+    }
     
     return shift @{$self->{msgqueue}};
 }
@@ -294,18 +308,80 @@ sub next_message {
 
 Returns all the messages received until now from the server. Each message is
 a Net::MessageBus::Message object.
+
+Argumens :
+
+=over 4
+
+=item * force_read_queue = forces a read of everyting the server might have sent 
+and we have't processed yet
+						 
+Note: Forcing a read of the message queue when I<block> mode is on will block the 
+call until we received something from the server
+
+=back
     
 =cut
 sub pending_messages {
     my $self = shift;
+    my %params = @_;
     
-    $self->read_server_messages();
+    if (! scalar(@{$self->{msgqueue}}) || $params{force_read_queue} ) {
+        $self->read_server_messages();
+    }
     
     my @messages = @{$self->{msgqueue}};
     $self->{msgqueue} = [];
     
     return @messages;
 }
+
+
+
+=head2 blocking
+
+Getter/Setter for the I<blocking> setting of the client. If set to true, when waiting for server 
+messages, the client will block until it receives something
+
+Examples :
+	my $blocking = $MessageBus->blocking();
+	or 
+	$MessageBus->blocking(1);
+	
+=cut
+sub blocking {
+	my $self = shift;
+	
+	if (defined $_[0]) {
+		$self->{blocking} = !!$_[0];
+	}
+	return $self->{blocking};
+}
+
+=head2 timeout
+
+Getter/Setter for the timeout when waiting for server messages.
+It can have subunitary value (eg. 0.01).
+
+I<Note1> : When I<blocking> is set to a true value, the timeout is ignored
+I<Note2> : When I<timeout> is set to 0 the effect is the same as setting I<blocking> to a true value.
+
+Example :
+	my $timeout = $MessageBus->timeout();
+	or 
+	$MessageBus->timeout(0.01);
+	
+=cut
+sub timeout {
+	my $self = shift;
+	
+	if (defined $_[0]) {
+		die "Invalid timeout specified" unless $_[0] =~ /^\d+(?:\.\d+)?$/;
+		$self->{timeout} = $_[0];
+	}
+	return $self->{timeout};
+}
+
 
 
 =head1 Private methods
@@ -421,34 +497,47 @@ sub read_server_messages {
     
     while ( 1 ) {
         
-        my @ready = $self->{server_sel}->can_read(0.01);
+        my @ready = $self->{server_sel}->can_read( $self->{blocking} ? 0 : ($self->{timeout} || 0.01) );
         last unless scalar(@ready);
         
         my $buffer;
-        sysread($ready[0],$buffer,8192);
         
-        $self->{buffer} .= $buffer;
+        if ( sysread($ready[0],$buffer,8192) ) {
         
-        while ( $self->{buffer} =~ s/(.*?\n)// ) {
-        
-            my $text = $1;
-
-            chomp $text;
+            $self->{buffer} .= $buffer;
             
-            my $data = from_json($text);
-        
-            if (defined $data->{type} && $data->{type} eq 'message') {
-                push @{$self->{msgqueue}}, Net::MessageBus::Message->new($data->{payload});
-            }
-            else {
-                $self->{response} = $data;
+            while ( $self->{buffer} =~ s/(.*?\n)// ) {
+            
+                my $text = $1;
+    
+                chomp $text;
+                
+                my $data = from_json($text);
+            
+                if (defined $data->{type} && $data->{type} eq 'message') {
+                    push @{$self->{msgqueue}}, Net::MessageBus::Message->new($data->{payload});
+                }
+                else {
+                    $self->{response} = $data;
+                }
             }
         }
-        
+        else {
+            if ($self->{auto_reconnect}) {
+                $self->connect_to_server();
+            }
+            else {
+                die "Net::MessageBus server closed the connection";
+            }
+        }
     }
 }
 
 
+=head1 SEE ALSO
+
+Check out L<Net::MessageBus::Server> which implements the server of the MessageBus and
+L<Net::MessageBus::Message> which is the OO inteface for the messages passwed between the client and the server
 
 
 =head1 AUTHOR
@@ -496,6 +585,7 @@ L<http://search.cpan.org/dist/Net-MessageBus/>
 
 =head1 ACKNOWLEDGEMENTS
 
+Thanks to Manol Roujinov for helping to improve this module
 
 =head1 LICENSE AND COPYRIGHT
 
